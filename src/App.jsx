@@ -8,10 +8,10 @@ const CAEnrollBot = () => {
       content: `Hello! 👋 I'm your CA Enrollment Assistant.
 
 I can help you with:
-• Eligibility criteria
-• Registration process
-• Document requirements
-• Important deadlines
+• Subject details
+• Fees, discounts and offers
+• Enrollment process
+• Payment information
 
 What would you like to know?`
     }
