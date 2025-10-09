@@ -84,8 +84,8 @@ What would you like to know?`
             <HelpCircle className="text-white" size={24} />
           </div>
           <div>
-            <h1 className="font-bold text-lg">EnrollEase</h1>
-            <p className="text-xs opacity-80">Helping you navigate CA enrollment</p>
+            <h1 className="font-bold text-lg">Radic</h1>
+            <p className="text-xs opacity-80">Enrollment Support for CA Students</p>
           </div>
         </div>
 
