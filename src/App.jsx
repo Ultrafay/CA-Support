@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, HelpCircle } from 'lucide-react';
+import { Send, HelpCircle, User, Bot } from 'lucide-react';
 
 const CAEnrollBot = () => {
   const [messages, setMessages] = useState([
@@ -13,7 +13,6 @@ I can help you with:
 • Enrollment process
 • Payment information
 
-What would you like to know?`
     }
   ]);
   const [input, setInput] = useState('');
@@ -53,9 +52,17 @@ What would you like to know?`
         setThreadId(data.threadId);
       }
 
+      // Remove citations from the response
+      const cleanedResponse = data.response
+        .replace(/【\d+:\d+†source】/g, '') // Remove citation format like 【4:0†source】
+        .replace(/\[\d+\]/g, '') // Remove [1], [2], etc.
+        .replace(/\[citation:\d+\]/g, '') // Remove [citation:1]
+        .replace(/\s+/g, ' ') // Clean up extra spaces
+        .trim();
+
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: data.response
+        content: cleanedResponse
       }]);
     } catch (error) {
       console.error('Error:', error);
@@ -74,30 +81,44 @@ What would you like to know?`
 
   return (
     <div className="bg-green-50 min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full h-[80vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
+      <div className="w-full max-w-5xl h-[90vh] flex flex-col rounded-2xl overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-green-600 text-white p-4 flex items-center space-x-3" style={{
+        <div className="bg-green-600 text-white p-6 flex items-center space-x-4" style={{
           background: 'rgba(46, 125, 50, 0.95)',
           backdropFilter: 'blur(10px)'
         }}>
-          <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
-            <HelpCircle className="text-white" size={24} />
+          <div className="w-12 h-12 rounded-full bg-green-700 flex items-center justify-center">
+            <HelpCircle className="text-white" size={28} />
           </div>
           <div>
-            <h1 className="font-bold text-lg">Radic</h1>
-            <p className="text-xs opacity-80">Enrollment Support for CA Students</p>
+            <h1 className="font-bold text-2xl">CA Enroll Assistant</h1>
+            <p className="text-sm opacity-80">Helping you navigate CA enrollment</p>
           </div>
         </div>
 
         {/* Chat Container */}
         <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-green-50 to-green-100"
+          className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-green-50 to-green-100"
         >
           {messages.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={idx} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              {/* Avatar */}
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                msg.role === 'user' 
+                  ? 'bg-blue-600' 
+                  : 'bg-green-600'
+              }`}>
+                {msg.role === 'user' ? (
+                  <User size={20} className="text-white" />
+                ) : (
+                  <Bot size={20} className="text-white" />
+                )}
+              </div>
+
+              {/* Message Bubble */}
               <div 
-                className={`max-w-xs md:max-w-md rounded-2xl p-4 shadow-sm ${
+                className={`max-w-2xl rounded-2xl p-5 shadow-sm ${
                   msg.role === 'user' 
                     ? 'bg-green-600 text-white rounded-tr-none' 
                     : 'bg-white text-gray-800 rounded-tl-none'
@@ -111,16 +132,19 @@ What would you like to know?`
                   animation: 'fadeIn 0.3s ease-out'
                 }}
               >
-                <p className="whitespace-pre-line text-sm">{msg.content}</p>
+                <p className="whitespace-pre-line text-base leading-relaxed">{msg.content}</p>
               </div>
             </div>
           ))}
 
           {/* Typing Indicator */}
           {isTyping && (
-            <div className="flex justify-start items-center">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+                <Bot size={20} className="text-white" />
+              </div>
               <div 
-                className="bg-white rounded-2xl rounded-tl-none px-4 py-2"
+                className="bg-white rounded-2xl rounded-tl-none px-5 py-4"
                 style={{
                   background: 'rgba(255, 255, 255, 0.95)',
                   backdropFilter: 'blur(10px)',
@@ -128,9 +152,9 @@ What would you like to know?`
                 }}
               >
                 <div className="flex space-x-1">
-                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
                 </div>
               </div>
             </div>
@@ -139,27 +163,27 @@ What would you like to know?`
 
         {/* Input Area */}
         <div 
-          className="bg-green-600 p-3"
+          className="bg-green-600 p-5"
           style={{
             background: 'rgba(46, 125, 50, 0.95)',
             backdropFilter: 'blur(10px)'
           }}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Ask about CA enrollment..." 
-              className="flex-1 rounded-full px-4 py-3 bg-white bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-green-300 text-gray-800 placeholder-green-700 placeholder-opacity-60"
+              className="flex-1 rounded-full px-6 py-4 text-base bg-white bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-green-300 text-gray-800 placeholder-green-700 placeholder-opacity-60"
             />
             <button 
               onClick={sendMessage}
               disabled={!input.trim() || isTyping}
-              className="w-12 h-12 rounded-full bg-green-700 text-white flex items-center justify-center hover:bg-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-14 h-14 rounded-full bg-green-700 text-white flex items-center justify-center hover:bg-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send size={20} />
+              <Send size={24} />
             </button>
           </div>
           <div className="flex justify-center mt-2 space-x-4">
