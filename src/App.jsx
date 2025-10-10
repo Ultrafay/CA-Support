@@ -13,6 +13,8 @@ I can help you with:
 • Enrollment process
 • Payment information
 
+
+What would you like to know?`
     }
   ]);
   const [input, setInput] = useState('');
