@@ -53,6 +53,14 @@ What would you like to know?`
         setThreadId(data.threadId);
       }
 
+        // Remove citations from the response
+      const cleanedResponse = data.response
+        .replace(/【\d+:\d+†source】/g, '') // Remove citation format like 【4:0†source】
+        .replace(/\[\d+\]/g, '') // Remove [1], [2], etc.
+        .replace(/\[citation:\d+\]/g, '') // Remove [citation:1]
+        .replace(/\s+/g, ' ') // Clean up extra spaces
+        .trim();
+
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.response
