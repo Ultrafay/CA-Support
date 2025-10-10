@@ -78,6 +78,15 @@ export default async function handler(req, res) {
       .map(content => content.text.value)
       .join('\n');
 
+// Remove citations from the response
+    responseText = responseText
+      .replace(/【\d+:\d+†source】/g, '') // Remove 【4:0†source】 format
+      .replace(/\[\d+\]/g, '') // Remove [1], [2] format
+      .replace(/\[citation:\d+\]/g, '') // Remove [citation:1] format
+      .replace(/\u3010\d+:\d+\u2020[^\u3011]+\u3011/g, '') // Remove unicode citation brackets
+      .replace(/\s+/g, ' ') // Clean up multiple spaces
+      .trim();
+    
     return res.status(200).json({
       response: responseText,
       threadId: currentThreadId
