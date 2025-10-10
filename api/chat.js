@@ -72,12 +72,37 @@ export default async function handler(req, res) {
       throw new Error('No assistant response found');
     }
 
-    // Extract the text content
-    const responseText = assistantMessage.content
-      .filter(content => content.type === 'text')
-      .map(content => content.text.value)
-      .join('\n');
+    // Extract and clean text content, removing annotations
+    let responseText = '';
     
+    for (const content of assistantMessage.content) {
+      if (content.type === 'text') {
+        let text = content.text.value;
+        
+        // Remove annotations using the annotation indices
+        if (content.text.annotations && content.text.annotations.length > 0) {
+          // Sort annotations by start_index in descending order to avoid index shifting
+          const sortedAnnotations = [...content.text.annotations].sort((a, b) => b.start_index - a.start_index);
+          
+          // Remove each annotation from the text
+          for (const annotation of sortedAnnotations) {
+            text = text.substring(0, annotation.start_index) + text.substring(annotation.end_index);
+          }
+        }
+        
+        responseText += text;
+      }
+    }
+
+    // Additional cleanup for any remaining citation formats
+    responseText = responseText
+      .replace(/【\d+:\d+†source】/g, '')
+      .replace(/\[\d+\]/g, '')
+      .replace(/\[citation:\d+\]/g, '')
+      .replace(/\u3010\d+:\d+\u2020[^\u3011]+\u3011/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
     return res.status(200).json({
       response: responseText,
       threadId: currentThreadId
