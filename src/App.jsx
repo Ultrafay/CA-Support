@@ -93,7 +93,7 @@ What would you like to know?`
             <HelpCircle className="text-white" size={28} />
           </div>
           <div>
-            <h1 className="font-bold text-2xl">CA Enroll Assistant</h1>
+            <h1 className="font-bold text-2xl">Radic</h1>
             <p className="text-sm opacity-80">Helping you navigate CA enrollment</p>
           </div>
         </div>
