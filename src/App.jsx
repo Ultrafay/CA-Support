@@ -94,7 +94,7 @@ What would you like to know?`
           </div>
           <div>
             <h1 className="font-bold text-2xl">Radic</h1>
-            <p className="text-sm opacity-80">Helping you navigate CA enrollment</p>
+            <p className="text-sm opacity-80">Enrollment Support for CA Students</p>
           </div>
         </div>
 
