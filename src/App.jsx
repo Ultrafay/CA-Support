@@ -27,93 +27,92 @@ What would you like to know?`
     }
   }, [messages, isTyping]);
 
-  // Function to clean markdown and parse message content
-  const formatMessage = (content) => {
-    // Clean up markdown-style formatting
-    let cleanContent = content
-      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
-      .replace(/\*([^*]+)\*/g, '$1') // Remove *italic*
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$2') // Convert [text](url) to just url
-      .replace(/`([^`]+)`/g, '$1'); // Remove `code`
-
-    // Split by lines to preserve structure
-    const lines = cleanContent.split('\n');
+  // Parse message content with proper formatting
+  const parseMessage = (content) => {
+    const elements = [];
+    let currentText = '';
+    let index = 0;
     
-    return lines.map((line, lineIdx) => {
-      if (!line.trim()) return <br key={lineIdx} />;
+    // First clean up markdown
+    content = content
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1');
+    
+    // Process character by character
+    while (index < content.length) {
+      // Check for URL
+      const urlMatch = content.slice(index).match(/^(https?:\/\/[^\s\)]+)/);
       
-      // URL detection - matches http:// or https:// URLs
-      const urlRegex = /(https?:\/\/[^\s)]+)/g;
-      const parts = [];
-      let lastIndex = 0;
-      let match;
-
-      // Find all URLs in the line
-      while ((match = urlRegex.exec(line)) !== null) {
-        // Add text before URL
-        if (match.index > lastIndex) {
-          parts.push({
-            type: 'text',
-            content: line.substring(lastIndex, match.index)
-          });
+      if (urlMatch) {
+        // Save any accumulated text
+        if (currentText) {
+          elements.push({ type: 'text', content: currentText });
+          currentText = '';
         }
+        
         // Add URL
-        parts.push({
-          type: 'url',
-          content: match[0]
-        });
-        lastIndex = match.index + match[0].length;
+        elements.push({ type: 'url', content: urlMatch[1] });
+        index += urlMatch[1].length;
+      } else if (content[index] === '\n') {
+        // Handle line breaks
+        if (currentText) {
+          elements.push({ type: 'text', content: currentText });
+          currentText = '';
+        }
+        elements.push({ type: 'break' });
+        index++;
+      } else {
+        currentText += content[index];
+        index++;
       }
-      
-      // Add remaining text
-      if (lastIndex < line.length) {
-        parts.push({
-          type: 'text',
-          content: line.substring(lastIndex)
-        });
+    }
+    
+    // Add any remaining text
+    if (currentText) {
+      elements.push({ type: 'text', content: currentText });
+    }
+    
+    return elements;
+  };
+
+  const formatMessage = (content) => {
+    const elements = parseMessage(content);
+    
+    return elements.map((element, idx) => {
+      if (element.type === 'url') {
+        // Clean URL for display
+        let displayText = element.content;
+        try {
+          const urlObj = new URL(element.content);
+          displayText = urlObj.hostname.replace('www.', '') + urlObj.pathname;
+          if (displayText.length > 45) {
+            displayText = displayText.substring(0, 42) + '...';
+          }
+        } catch (e) {
+          if (displayText.length > 45) {
+            displayText = displayText.substring(0, 42) + '...';
+          }
+        }
+        
+        return (
+          <a
+            key={idx}
+            href={element.content}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-700 underline decoration-2 underline-offset-2 font-medium transition-colors my-0.5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>{displayText}</span>
+            <ExternalLink size={14} className="flex-shrink-0" />
+          </a>
+        );
+      } else if (element.type === 'break') {
+        return <br key={idx} />;
+      } else {
+        return <span key={idx}>{element.content}</span>;
       }
-
-      // If no URLs found, treat entire line as text
-      if (parts.length === 0) {
-        parts.push({ type: 'text', content: line });
-      }
-
-      return (
-        <div key={lineIdx} className="mb-2 last:mb-0">
-          {parts.map((part, idx) => {
-            if (part.type === 'url') {
-              // Extract a clean display name
-              let displayUrl = part.content;
-              try {
-                const url = new URL(part.content);
-                displayUrl = url.hostname + url.pathname;
-                if (displayUrl.length > 40) {
-                  displayUrl = displayUrl.substring(0, 37) + '...';
-                }
-              } catch (e) {
-                if (displayUrl.length > 40) {
-                  displayUrl = displayUrl.substring(0, 37) + '...';
-                }
-              }
-
-              return (
-                <a
-                  key={idx}
-                  href={part.content}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-600 underline font-medium transition-colors mx-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {displayUrl}
-                  <ExternalLink size={14} className="inline flex-shrink-0" />
-                </a>
-              );
-            }
-            return <span key={idx}>{part.content}</span>;
-          })}
-        </div>
-      );
     });
   };
 
@@ -143,12 +142,10 @@ What would you like to know?`
         setThreadId(data.threadId);
       }
 
-      // Remove citations from the response
       const cleanedResponse = data.response
         .replace(/【\d+:\d+†source】/g, '')
         .replace(/\[\d+\]/g, '')
         .replace(/\[citation:\d+\]/g, '')
-        .replace(/\s+/g, ' ')
         .trim();
 
       setMessages(prev => [...prev, {
@@ -171,83 +168,58 @@ What would you like to know?`
   };
 
   return (
-    <div className="bg-gradient-to-br from-green-50 to-green-100 min-h-screen w-full flex flex-col">
+    <div className="h-screen w-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-green-600 text-white p-6 flex items-center space-x-4 shadow-lg" style={{
-        background: 'rgba(46, 125, 50, 0.95)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div className="w-12 h-12 rounded-full bg-green-700 flex items-center justify-center shadow-md">
-          <HelpCircle className="text-white" size={28} />
-        </div>
-        <div>
-          <h1 className="font-bold text-2xl">Radic</h1>
-          <p className="text-sm opacity-80">Enrollment Support for CA Students</p>
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-5 shadow-lg">
+        <div className="max-w-6xl mx-auto flex items-center gap-4">
+          <div className="w-11 h-11 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <HelpCircle size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Radic</h1>
+            <p className="text-sm text-green-100">Enrollment Support for CA Students</p>
+          </div>
         </div>
       </div>
 
       {/* Chat Container */}
       <div 
         ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6"
+        className="flex-1 overflow-y-auto px-4 py-6"
       >
-        <div className="max-w-5xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           {messages.map((msg, idx) => (
-            <div key={idx} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-              {/* Avatar */}
-              <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-md ${
-                msg.role === 'user' 
-                  ? 'bg-blue-600' 
-                  : 'bg-green-600'
+            <div key={idx} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+              <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
+                msg.role === 'user' ? 'bg-blue-500' : 'bg-green-600'
               }`}>
-                {msg.role === 'user' ? (
-                  <User size={20} className="text-white" />
-                ) : (
-                  <Bot size={20} className="text-white" />
-                )}
+                {msg.role === 'user' ? <User size={18} className="text-white" /> : <Bot size={18} className="text-white" />}
               </div>
 
-              {/* Message Bubble */}
               <div 
-                className={`max-w-3xl rounded-2xl p-5 shadow-md ${
+                className={`max-w-2xl rounded-2xl px-5 py-4 shadow-sm ${
                   msg.role === 'user' 
-                    ? 'bg-green-600 text-white rounded-tr-none' 
-                    : 'bg-white text-gray-800 rounded-tl-none'
+                    ? 'bg-blue-500 text-white rounded-tr-sm' 
+                    : 'bg-white text-gray-800 rounded-tl-sm border border-gray-200'
                 }`}
-                style={{
-                  background: msg.role === 'user' 
-                    ? 'rgba(22, 101, 52, 0.9)' 
-                    : 'rgba(255, 255, 255, 0.98)',
-                  backdropFilter: 'blur(10px)',
-                  border: msg.role === 'user' ? 'none' : '1px solid rgba(0, 0, 0, 0.05)',
-                  animation: 'fadeIn 0.3s ease-out'
-                }}
               >
-                <div className="text-base leading-relaxed">
+                <div className="text-[15px] leading-relaxed whitespace-pre-wrap">
                   {formatMessage(msg.content)}
                 </div>
               </div>
             </div>
           ))}
 
-          {/* Typing Indicator */}
           {isTyping && (
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 flex items-center justify-center shadow-md">
-                <Bot size={20} className="text-white" />
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-600 flex items-center justify-center">
+                <Bot size={18} className="text-white" />
               </div>
-              <div 
-                className="bg-white rounded-2xl rounded-tl-none px-5 py-4 shadow-md"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.98)',
-                  backdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(0, 0, 0, 0.05)'
-                }}
-              >
-                <div className="flex space-x-1">
-                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                  <span className="w-3 h-3 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+              <div className="bg-white rounded-2xl rounded-tl-sm px-5 py-4 border border-gray-200 shadow-sm">
+                <div className="flex gap-1.5">
+                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></span>
+                  <span className="w-2 h-2 bg-green-600 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></span>
                 </div>
               </div>
             </div>
@@ -256,36 +228,41 @@ What would you like to know?`
       </div>
 
       {/* Input Area */}
-      <div 
-        className="bg-green-600 p-5 shadow-lg"
-        style={{
-          background: 'rgba(46, 125, 50, 0.95)',
-          backdropFilter: 'blur(10px)'
-        }}
-      >
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center space-x-3">
+      <div className="border-t border-gray-200 bg-white px-4 py-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-3">
             <input 
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
               placeholder="Ask about CA enrollment..." 
-              className="flex-1 rounded-full px-6 py-4 text-base bg-white focus:outline-none focus:ring-2 focus:ring-green-300 text-gray-800 placeholder-gray-500 shadow-sm"
+              className="flex-1 rounded-full border border-gray-300 px-5 py-3 text-[15px] focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-20 transition"
             />
             <button 
               onClick={sendMessage}
               disabled={!input.trim() || isTyping}
-              className="w-14 h-14 rounded-full bg-green-700 text-white flex items-center justify-center hover:bg-green-800 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-12 h-12 rounded-full bg-green-600 hover:bg-green-700 text-white flex items-center justify-center transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send size={24} />
+              <Send size={20} />
             </button>
           </div>
-          <div className="flex justify-center mt-3 space-x-4 flex-wrap gap-2">
-            <button onClick={() => handleQuickAction('What are the eligibility criteria?')} className="text-xs text-white opacity-90 hover:opacity-100 transition px-3 py-1 rounded-full hover:bg-green-700">Eligibility</button>
-            <button onClick={() => handleQuickAction('What are the fees?')} className="text-xs text-white opacity-90 hover:opacity-100 transition px-3 py-1 rounded-full hover:bg-green-700">Fees</button>
-            <button onClick={() => handleQuickAction('What are the important deadlines?')} className="text-xs text-white opacity-90 hover:opacity-100 transition px-3 py-1 rounded-full hover:bg-green-700">Deadlines</button>
-            <button onClick={() => handleQuickAction('How can I contact support?')} className="text-xs text-white opacity-90 hover:opacity-100 transition px-3 py-1 rounded-full hover:bg-green-700">Contact</button>
+          
+          <div className="flex flex-wrap gap-2 mt-3 justify-center">
+            {[
+              'What are the eligibility criteria?',
+              'What are the fees?',
+              'What are the important deadlines?',
+              'How can I contact support?'
+            ].map((query) => (
+              <button
+                key={query}
+                onClick={() => handleQuickAction(query)}
+                className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-full transition border border-green-200"
+              >
+                {query.replace('What are the ', '').replace('How can I ', '').replace('?', '')}
+              </button>
+            ))}
           </div>
         </div>
       </div>
