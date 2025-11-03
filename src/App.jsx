@@ -5,13 +5,15 @@ const CAEnrollBot = () => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `Hello! 👋 I'm your CA Enrollment Assistant.
+      content: `Assalamualaikum 👋 Hope you’re doing well!
+      
+I’m the Support Assistant at ABC Institute of Accountancy, and I look after our CA Program.
+How can I help you today? Feel free to ask about:
 
-I can help you with:
-• Subject details
-• Fees, discounts and offers
-• Enrollment process
-• Payment information
+• Course details and subject options
+• Our teaching approach and testing system
+• Fees, discounts, and offers
+• Payment, enrollment, or LMS support
 
 What would you like to know?`
     }
