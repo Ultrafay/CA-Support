@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, HelpCircle, User, Bot } from 'lucide-react';
+import { Send, HelpCircle, User, Bot, ExternalLink } from 'lucide-react';
 
 const CAEnrollBot = () => {
   const [messages, setMessages] = useState([
@@ -12,7 +12,6 @@ I can help you with:
 • Fees, discounts and offers
 • Enrollment process
 • Payment information
-
 
 What would you like to know?`
     }
@@ -27,6 +26,43 @@ What would you like to know?`
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  // Function to parse and format message content
+  const formatMessage = (content) => {
+    // Split content by lines to preserve formatting
+    const lines = content.split('\n');
+    
+    return lines.map((line, lineIdx) => {
+      // Check if line contains URLs
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const parts = line.split(urlRegex);
+      
+      return (
+        <span key={lineIdx}>
+          {parts.map((part, idx) => {
+            // Check if this part is a URL
+            if (urlRegex.test(part)) {
+              return (
+                <a
+                  key={idx}
+                  href={part}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 underline transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {part.length > 50 ? part.substring(0, 47) + '...' : part}
+                  <ExternalLink size={14} className="inline" />
+                </a>
+              );
+            }
+            return <span key={idx}>{part}</span>;
+          })}
+          {lineIdx < lines.length - 1 && <br />}
+        </span>
+      );
+    });
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -56,10 +92,10 @@ What would you like to know?`
 
       // Remove citations from the response
       const cleanedResponse = data.response
-        .replace(/【\d+:\d+†source】/g, '') // Remove citation format like 【4:0†source】
-        .replace(/\[\d+\]/g, '') // Remove [1], [2], etc.
-        .replace(/\[citation:\d+\]/g, '') // Remove [citation:1]
-        .replace(/\s+/g, ' ') // Clean up extra spaces
+        .replace(/【\d+:\d+†source】/g, '')
+        .replace(/\[\d+\]/g, '')
+        .replace(/\[citation:\d+\]/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 
       setMessages(prev => [...prev, {
@@ -134,7 +170,9 @@ What would you like to know?`
                   animation: 'fadeIn 0.3s ease-out'
                 }}
               >
-                <p className="whitespace-pre-line text-base leading-relaxed">{msg.content}</p>
+                <div className="text-base leading-relaxed">
+                  {formatMessage(msg.content)}
+                </div>
               </div>
             </div>
           ))}
