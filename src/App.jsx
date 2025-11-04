@@ -178,8 +178,8 @@ What would you like to know?`
             <HelpCircle size={24} />
           </div>
           <div>
-            <h1 className="text-xl font-bold">Radic</h1>
-            <p className="text-sm text-green-100">Enrollment Support for CA Students</p>
+            <h1 className="text-xl font-bold">RADIC</h1>
+            <p className="text-sm text-green-100">Digital Transformation for Education Institute.</p>
           </div>
         </div>
       </div>
