@@ -169,29 +169,18 @@ What would you like to know?`
     setInput(query);
   };
 
-return (
-  <div className="h-screen w-screen flex flex-col bg-gray-50">
-    {/* Header */}
-    <div className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-5 shadow-lg">
-      <div className="max-w-6xl mx-auto flex items-center gap-4">
-        <div className="w-11 h-11 rounded-full bg-white bg-opacity-20 flex items-center justify-center overflow-hidden">
-          <img
-            src="/resources/logo.png"
-            alt="RADIC Logo"
-            className="w-8 h-8 object-contain"
-          />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold">RADIC</h1>
-          <p className="text-sm text-green-100">
-            Digital Transformation for Education Institute.
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
+  return (
+    <div className="h-screen w-screen flex flex-col bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-5 shadow-lg">
+        <div className="max-w-6xl mx-auto flex items-center gap-4">
+          <div className="w-11 h-11 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <HelpCircle size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">RADIC</h1>
+            <p className="text-sm text-green-100">Digital Transformation for Education Institute.</p>
+          </div>
 
       {/* Chat Container */}
       <div 
