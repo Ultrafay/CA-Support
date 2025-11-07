@@ -233,7 +233,7 @@ What would you like to know?`
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-              placeholder="Ask about CA enrollment..." 
+              placeholder="Ask about CA course details, enrollment guidance, or fee information." 
               className="flex-1 rounded-full border border-gray-300 px-5 py-3 text-[15px] focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500 focus:ring-opacity-20 transition"
             />
             <button 
