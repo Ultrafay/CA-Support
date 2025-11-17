@@ -94,25 +94,60 @@ export default async function handler(req, res) {
       }
     }
 
-    // Additional cleanup for any remaining citation formats
-    responseText = responseText
-      .replace(/【\d+:\d+†source】/g, '')
-      .replace(/\[\d+\]/g, '')
-      .replace(/\[citation:\d+\]/g, '')
-      .replace(/\u3010\d+:\d+\u2020[^\u3011]+\u3011/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+// Enhanced citation removal function
+function removeCitations(text) {
+  return text
+    // Remove Unicode citation brackets 【source】
+    .replace(/【\d+:\d+†source】/g, '')
+    .replace(/【[^】]*】/g, '')
+    
+    // Remove various bracket citation formats
+    .replace(/\[\d+\]/g, '')
+    .replace(/\[citation:\d+\]/g, '')
+    .replace(/\[\d+:\d+†[^\]]+\]/g, '')
+    
+    // Remove Unicode variants
+    .replace(/\u3010\d+:\d+\u2020[^\u3011]+\u3011/g, '')
+    
+    // Remove any remaining citation-like patterns
+    .replace(/\[\s*\d+\s*:\s*\d+\s*[^\]]*\]/g, '')
+    
+    // Clean up extra whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-    return res.status(200).json({
-      response: responseText,
-      threadId: currentThreadId
-    });
+// In your handler function, replace the citation cleanup section:
 
-  } catch (error) {
-    console.error('Error:', error);
-    return res.status(500).json({ 
-      error: 'An error occurred while processing your request',
-      details: error.message 
-    });
+// Extract and clean text content, removing annotations
+let responseText = '';
+
+for (const content of assistantMessage.content) {
+  if (content.type === 'text') {
+    let text = content.text.value;
+    
+    // Remove annotations using the annotation indices
+    if (content.text.annotations && content.text.annotations.length > 0) {
+      // Sort annotations by start_index in descending order
+      const sortedAnnotations = [...content.text.annotations].sort(
+        (a, b) => b.start_index - a.start_index
+      );
+      
+      // Remove each annotation from the text
+      for (const annotation of sortedAnnotations) {
+        text = text.substring(0, annotation.start_index) + 
+               text.substring(annotation.end_index);
+      }
+    }
+    
+    responseText += text;
   }
 }
+
+// Apply comprehensive citation removal
+responseText = removeCitations(responseText);
+
+return res.status(200).json({
+  response: responseText,
+  threadId: currentThreadId
+});
